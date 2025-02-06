@@ -52,8 +52,8 @@ KERNEL_FQ void m34200_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
   // printf("%s", (u8 *) salt_bufs[SALT_POS_HOST].salt_buf);
   sha512_init (&ctx);
   // print_hex(pws[gid].i, pws[gid].pw_len);
-  sha512_update_swap (&ctx, pws[gid].i, pws[gid].pw_len);
-  sha512_update_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf, salt_bufs[SALT_POS_HOST].salt_len);
+  sha512_update_global_swap (&ctx, pws[gid].i, pws[gid].pw_len);
+  sha512_update_global_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf, salt_bufs[SALT_POS_HOST].salt_len);
   sha512_final (&ctx);
 
   tmps[gid].current_hash[ 0] = h32_from_64_S (ctx.h[0]);
@@ -94,9 +94,9 @@ KERNEL_FQ void m34200_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 
     sha512_init (&ctx);
 
-    sha512_update (&ctx, tmps[gid].current_hash, 64);
-    sha512_update_swap (&ctx, pws[gid].i, pws[gid].pw_len);
-    sha512_update_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf, salt_bufs[SALT_POS_HOST].salt_len);
+    sha512_update_global (&ctx, tmps[gid].current_hash, 64);
+    sha512_update_global_swap (&ctx, pws[gid].i, pws[gid].pw_len);
+    sha512_update_global_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf, salt_bufs[SALT_POS_HOST].salt_len);
     sha512_final (&ctx);
 
     tmps[gid].current_hash[ 0] = h32_from_64_S (ctx.h[0]);
