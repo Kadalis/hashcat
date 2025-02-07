@@ -150,14 +150,19 @@ int module_hash_decode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
 
   const u8 *salt_pos = token.buf[1];
   const int salt_len = token.len[1];
+  
+  memcpy ((u8 *) salt->salt_buf, salt_pos, salt_len);
 
-  u8 *salt_u8 = (u8 *) salt->salt_buf;
+  u8 *salt_pc_u8 = (u8 *) salt->salt_buf_pc;
+  
+  // concat braces to precomputed salt
+  salt_pc_u8[0] = '{';
+  memcpy (salt_pc_u8 + 1, salt_pos, salt_len);
+  salt_pc_u8[salt_len + 1] = '}';
+  
+  salt->salt_len = salt_len;
+  salt->salt_len_pc = salt_len + 2;
 
-  salt_u8[0] = '{';
-  memcpy (salt_u8 + 1, salt_pos, salt_len);
-  salt_u8[salt_len + 1] = '}';
-
-  salt->salt_len = salt_len + 2;
 
   u8 hash_buf[128];
   const int hash_decode_len = base64_decode (base64_to_int, token.buf[2], token.len[2], hash_buf);
@@ -185,35 +190,13 @@ void printf_hash (u32 *hash)
 int module_hash_encode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const void *digest_buf, MAYBE_UNUSED const salt_t *salt, MAYBE_UNUSED const void *esalt_buf, MAYBE_UNUSED const void *hook_salt_buf, MAYBE_UNUSED const hashinfo_t *hash_info, char *line_buf, MAYBE_UNUSED const int line_size)
 {
   u64 *digest = (u64 *) digest_buf;
-  int line_len = 0;
 
   // encoding hash
   u8 base64_hash_buf[128];
-
   memset (base64_hash_buf, 0, sizeof (base64_hash_buf));
-
   base64_encode (int_to_base64, (u8 *) digest, 64, base64_hash_buf);
 
-  if (salt->salt_len == 2)
-  {
-    // empty salt
-    return snprintf (line_buf, line_size, "$symfony_sha512$$%s", base64_hash_buf);
-  }
-  else
-  {
-    // encoding salt
-    // excluding curly braces in beginning and end of salt
-    u8 *salt_u8 = (u8 *) salt->salt_buf;
-
-    // salt_u8[0] = 0;
-    salt_u8[salt->salt_len - 1] = 0;
-
-    line_len = snprintf (line_buf, line_size, "$symfony_sha512$%s$%s", salt_u8 + 1, base64_hash_buf);
-    // salt_u8[0] = '{';
-    salt_u8[salt->salt_len - 1] = '}';
-
-    return line_len;
-  }
+  return snprintf (line_buf, line_size, "$symfony_sha512$%s$%s", (u8 *) salt->salt_buf, base64_hash_buf);
 }
 
 void module_init (module_ctx_t *module_ctx)
