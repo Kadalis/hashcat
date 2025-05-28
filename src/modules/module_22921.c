@@ -22,7 +22,6 @@ static const u64   KERN_TYPE      = 22921;
 static const u32   OPTI_TYPE      = OPTI_TYPE_ZERO_BYTE;
 static const u64   OPTS_TYPE      = OPTS_TYPE_STOCK_MODULE
                                   | OPTS_TYPE_PT_GENERATE_LE
-                                  | OPTS_TYPE_SUGGEST_KG
                                   | OPTS_TYPE_MAXIMUM_THREADS;
 static const u32   SALT_TYPE      = SALT_TYPE_EMBEDDED;
 static const char *ST_PASS        = "hashcat";
@@ -53,6 +52,23 @@ typedef struct pem
 } pem_t;
 
 static const char *SIGNATURE_SSHNG = "$sshng$";
+
+bool module_unstable_warning (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra, MAYBE_UNUSED const hc_device_param_t *device_param)
+{
+  if ((device_param->opencl_platform_vendor_id == VENDOR_ID_APPLE) && (device_param->opencl_device_type & CL_DEVICE_TYPE_GPU))
+  {
+    if (device_param->is_metal == true)
+    {
+      if (strncmp (device_param->device_name, "Intel", 5) == 0)
+      {
+        // Intel Iris Graphics, Metal Version 244.303: self-test failed
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 u64 module_esalt_size (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
 {
@@ -266,6 +282,6 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_st_hash                  = module_st_hash;
   module_ctx->module_st_pass                  = module_st_pass;
   module_ctx->module_tmp_size                 = MODULE_DEFAULT;
-  module_ctx->module_unstable_warning         = MODULE_DEFAULT;
+  module_ctx->module_unstable_warning         = module_unstable_warning;
   module_ctx->module_warmup_disable           = MODULE_DEFAULT;
 }
