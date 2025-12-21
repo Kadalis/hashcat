@@ -17,8 +17,8 @@ static const u32   DGST_POS1      = 7;
 static const u32   DGST_POS2      = 2;
 static const u32   DGST_POS3      = 6;
 static const u32   DGST_SIZE      = DGST_SIZE_4_8;
-static const u32   HASH_CATEGORY  = HASH_CATEGORY_RAW_HASH_AUTHENTICATED;
-static const char *HASH_NAME      = "Amazon AWS4-HMAC-SHA256";
+static const u32   HASH_CATEGORY  = HASH_CATEGORY_NETWORK_PROTOCOL;
+static const char *HASH_NAME      = "Amazon AWS Signature Version 4";
 static const u64   KERN_TYPE      = 28700;
 static const u32   OPTI_TYPE      = OPTI_TYPE_ZERO_BYTE
                                   | OPTI_TYPE_NOT_ITERATED;
@@ -363,6 +363,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask           = MODULE_DEFAULT;
   module_ctx->module_benchmark_charset        = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt           = MODULE_DEFAULT;
+  module_ctx->module_bridge_name              = MODULE_DEFAULT;
+  module_ctx->module_bridge_type              = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess  = MODULE_DEFAULT;
   module_ctx->module_deep_comp_kernel         = MODULE_DEFAULT;
   module_ctx->module_deprecated_notice        = MODULE_DEFAULT;

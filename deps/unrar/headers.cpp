@@ -40,7 +40,7 @@ void FileHeader::Reset(size_t SubDataSize)
 FileHeader& FileHeader::operator = (FileHeader &hd)
 {
   SubData.Reset();
-  memcpy(this,&hd,sizeof(*this));
+  memcpy((void*)this,&hd,sizeof(*this));
   SubData.CleanData();
   SubData=hd.SubData;
   return *this;
@@ -49,5 +49,13 @@ FileHeader& FileHeader::operator = (FileHeader &hd)
 
 void MainHeader::Reset()
 {
-  *this={};
+  HighPosAV=0;
+  PosAV=0;
+  CommentInHeader=false;
+  PackComment=false;
+  Locator=false;
+  QOpenOffset=0;
+  QOpenMaxSize=0;
+  RROffset=0;
+  RRMaxSize=0;
 }

@@ -300,6 +300,7 @@ int module_hash_encode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
   const gpg_t *gpg = (const gpg_t *) esalt_buf;
 
   u8 encrypted_data[(384 * 8) + 1];
+  memset(encrypted_data, 0, 384*8+1); // always initialize to zero
 
   hex_encode ((const u8 *) gpg->encrypted_data, gpg->encrypted_data_size, (u8 *) encrypted_data);
 
@@ -336,6 +337,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask           = MODULE_DEFAULT;
   module_ctx->module_benchmark_charset        = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt           = MODULE_DEFAULT;
+  module_ctx->module_bridge_name              = MODULE_DEFAULT;
+  module_ctx->module_bridge_type              = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess  = MODULE_DEFAULT;
   module_ctx->module_deep_comp_kernel         = module_deep_comp_kernel;
   module_ctx->module_deprecated_notice        = MODULE_DEFAULT;

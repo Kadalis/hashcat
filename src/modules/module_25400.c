@@ -82,6 +82,20 @@ typedef struct pdf14_tmp
 
 static const char *SIGNATURE_PDF = "$pdf$";
 
+u32 module_kernel_loops_min (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
+{
+  const u32 kernel_loops_min = 70;
+
+  return kernel_loops_min;
+}
+
+u32 module_kernel_loops_max (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
+{
+  const u32 kernel_loops_max = 70;
+
+  return kernel_loops_max;
+}
+
 static void md5_complete_no_limit (u32 digest[4], const u32 *plain, const u32 plain_len)
 {
   // plain = u32 tmp_md5_buf[64] so this is compatible
@@ -119,33 +133,14 @@ char *module_jit_build_options (MAYBE_UNUSED const hashconfig_t *hashconfig, MAY
 {
   char *jit_build_options = NULL;
 
-  u32 native_threads = 0;
+  // We must override whatever tuningdb entry or -T value was set by the user with this
+  // That's because of RC code in inc_cipher_rc4.cl has this for GPU (different on CPU):
+  // #define KEY32(t,k) (((k) * 32) + ((t) & 31) + (((t) / 32) * 2048))
+  // #define KEY8(t,k) (((k) & 3) + (((k) / 4) * 128) + (((t) & 31) * 4) + (((t) / 32) * 8192))
 
-  if (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU)
-  {
-    native_threads = 1;
-  }
-  else if (device_param->opencl_device_type & CL_DEVICE_TYPE_GPU)
-  {
-    #if defined (__APPLE__)
+  u32 native_threads = (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU) ? 1 : 32;
 
-    native_threads = 32;
-
-    #else
-
-    if (device_param->device_local_mem_size < 49152)
-    {
-      native_threads = MIN (device_param->kernel_preferred_wgs_multiple, 32); // We can't just set 32, because Intel GPU need 8
-    }
-    else
-    {
-      native_threads = device_param->kernel_preferred_wgs_multiple;
-    }
-
-    #endif
-  }
-
-  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u -D _unroll", native_threads);
+  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u", native_threads);
 
   return jit_build_options;
 }
@@ -353,7 +348,6 @@ int module_hash_decode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
   // we don't use the user-password in the attack now (as we don't need it),
   //  however we could use it in the comparison of the decrypted o-value,
   //  yet it may make this attack a bit more fragile, as now we just check for ASCII
-
 
   // validate data
 
@@ -564,7 +558,6 @@ int module_build_plain_postprocess (MAYBE_UNUSED const hashconfig_t *hashconfig,
   return snprintf ((char *) dst_buf, dst_sz, "%s    (user password=%s)", (const char *) src_buf, (const char *) pdf_tmp->out);
 }
 
-
 // TODO how to add the recovered user-password to the hash?
 // module_hash_encode() is called before module_build_plain_postprocess() is
 //  module_hash_encode() doesn't know the recovered password src_buf or the decrypted o-value pdf_tmp->out
@@ -671,6 +664,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask           = MODULE_DEFAULT;
   module_ctx->module_benchmark_charset        = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt           = MODULE_DEFAULT;
+  module_ctx->module_bridge_name              = MODULE_DEFAULT;
+  module_ctx->module_bridge_type              = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess  = module_build_plain_postprocess;
   module_ctx->module_deep_comp_kernel         = MODULE_DEFAULT;
   module_ctx->module_deprecated_notice        = MODULE_DEFAULT;
@@ -713,8 +708,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_jit_cache_disable        = MODULE_DEFAULT;
   module_ctx->module_kernel_accel_max         = MODULE_DEFAULT;
   module_ctx->module_kernel_accel_min         = MODULE_DEFAULT;
-  module_ctx->module_kernel_loops_max         = MODULE_DEFAULT;
-  module_ctx->module_kernel_loops_min         = MODULE_DEFAULT;
+  module_ctx->module_kernel_loops_max         = module_kernel_loops_max;
+  module_ctx->module_kernel_loops_min         = module_kernel_loops_min;
   module_ctx->module_kernel_threads_max       = MODULE_DEFAULT;
   module_ctx->module_kernel_threads_min       = MODULE_DEFAULT;
   module_ctx->module_kern_type                = module_kern_type;

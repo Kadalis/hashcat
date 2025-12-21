@@ -15,6 +15,7 @@
 #include "backend.h"
 #include "shared.h"
 #include "locking.h"
+#include "thread.h"
 #include "outfile.h"
 
 u32 outfile_format_parse (const char *format_string)
@@ -143,7 +144,7 @@ int build_plain (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param, pl
   }
   else
   {
-    if ((user_options->attack_mode == ATTACK_MODE_STRAIGHT) || (user_options->attack_mode == ATTACK_MODE_ASSOCIATION))
+    if ((user_options->attack_mode == ATTACK_MODE_STRAIGHT) || (user_options->attack_mode == ATTACK_MODE_GENERIC) || (user_options->attack_mode == ATTACK_MODE_ASSOCIATION))
     {
       pw_t pw;
 
@@ -428,7 +429,7 @@ int build_debugdata (hashcat_ctx_t *hashcat_ctx, hc_device_param_t *device_param
   const u64 gidvid = plain->gidvid;
   const u32 il_pos = plain->il_pos;
 
-  if ((user_options->attack_mode != ATTACK_MODE_STRAIGHT) && (user_options->attack_mode != ATTACK_MODE_ASSOCIATION)) return 0;
+  if ((user_options->attack_mode != ATTACK_MODE_STRAIGHT) && (user_options->attack_mode != ATTACK_MODE_GENERIC) && (user_options->attack_mode != ATTACK_MODE_ASSOCIATION)) return 0;
 
   const u32 debug_mode = debugfile_ctx->mode;
 
@@ -506,12 +507,16 @@ int outfile_init (hashcat_ctx_t *hashcat_ctx)
   outfile_ctx->outfile_json    = user_options->outfile_json;
   outfile_ctx->is_fifo         = hc_path_is_fifo (outfile_ctx->filename);
 
+  hc_thread_mutex_init (outfile_ctx->mux_outfile);
+
   return 0;
 }
 
 void outfile_destroy (hashcat_ctx_t *hashcat_ctx)
 {
   outfile_ctx_t *outfile_ctx = hashcat_ctx->outfile_ctx;
+
+  hc_thread_mutex_delete (outfile_ctx->mux_outfile);
 
   if (outfile_ctx->is_fifo == true && outfile_ctx->fp.pfp != NULL)
   {

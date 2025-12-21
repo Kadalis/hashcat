@@ -28,6 +28,7 @@ static const u64   OPTS_TYPE      = OPTS_TYPE_STOCK_MODULE
                                   | OPTS_TYPE_PT_ALWAYS_HEXIFY
                                   | OPTS_TYPE_AUTODETECT_DISABLE;
 static const u32   SALT_TYPE      = SALT_TYPE_EMBEDDED;
+static const char *BENCHMARK_MASK = "?b?b?b?b?b";
 static const char *ST_PASS        = "\x91\xb2\xe0\x62\xb9";
 static const char *ST_HASH        = "$oldoffice$0*55045061647456688860411218030058*e7e24d163fbd743992d4b8892bf3f2f7*493410dbc832557d3fe1870ace8397e2";
 
@@ -80,33 +81,14 @@ char *module_jit_build_options (MAYBE_UNUSED const hashconfig_t *hashconfig, MAY
 {
   char *jit_build_options = NULL;
 
-  u32 native_threads = 0;
+  // We must override whatever tuningdb entry or -T value was set by the user with this
+  // That's because of RC code in inc_cipher_rc4.cl has this for GPU (different on CPU):
+  // #define KEY32(t,k) (((k) * 32) + ((t) & 31) + (((t) / 32) * 2048))
+  // #define KEY8(t,k) (((k) & 3) + (((k) / 4) * 128) + (((t) & 31) * 4) + (((t) / 32) * 8192))
 
-  if (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU)
-  {
-    native_threads = 1;
-  }
-  else if (device_param->opencl_device_type & CL_DEVICE_TYPE_GPU)
-  {
-    #if defined (__APPLE__)
+  u32 native_threads = (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU) ? 1 : 32;
 
-    native_threads = 32;
-
-    #else
-
-    if (device_param->device_local_mem_size < 49152)
-    {
-      native_threads = MIN (device_param->kernel_preferred_wgs_multiple, 32); // We can't just set 32, because Intel GPU need 8
-    }
-    else
-    {
-      native_threads = device_param->kernel_preferred_wgs_multiple;
-    }
-
-    #endif
-  }
-
-  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u -D _unroll", native_threads);
+  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u", native_threads);
 
   return jit_build_options;
 }
@@ -134,7 +116,7 @@ u32 module_pw_max (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED con
 
 const char *module_benchmark_mask (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
 {
-  return "?b?b?b?b?b";
+  return BENCHMARK_MASK;
 }
 
 u32 module_forced_outfile_format (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
@@ -278,6 +260,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask           = module_benchmark_mask;
   module_ctx->module_benchmark_charset        = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt           = MODULE_DEFAULT;
+  module_ctx->module_bridge_name              = MODULE_DEFAULT;
+  module_ctx->module_bridge_type              = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess  = MODULE_DEFAULT;
   module_ctx->module_deep_comp_kernel         = MODULE_DEFAULT;
   module_ctx->module_deprecated_notice        = MODULE_DEFAULT;

@@ -81,7 +81,10 @@ int sort_pot_orig_line (const void *v1, const void *v2)
   const pot_orig_line_entry_t *t1 = (const pot_orig_line_entry_t *) v1;
   const pot_orig_line_entry_t *t2 = (const pot_orig_line_entry_t *) v2;
 
-  return t1->line_pos > t2->line_pos;
+  if (t1->line_pos > t2->line_pos) return 1;
+  if (t1->line_pos < t2->line_pos) return -1;
+
+  return 0;
 }
 
 // the problem with the GNU tdestroy () function is that it doesn't work with mingw etc
@@ -112,9 +115,9 @@ int potfile_init (hashcat_ctx_t *hashcat_ctx)
 
   if (user_options->usage            > 0)     return 0;
   if (user_options->backend_info     > 0)     return 0;
+  if (user_options->hash_info        > 0)     return 0;
 
   if (user_options->benchmark       == true)  return 0;
-  if (user_options->hash_info       == true)  return 0;
   if (user_options->keyspace        == true)  return 0;
   if (user_options->stdout_flag     == true)  return 0;
   if (user_options->speed_only      == true)  return 0;
@@ -690,11 +693,11 @@ int potfile_handle_show (hashcat_ctx_t *hashcat_ctx)
 
         u8 *out_buf = potfile_ctx->out_buf;
 
-        int out_len = hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 0, HCBUFSIZ_LARGE - 0, salt_idx, digest_idx);
+        int out_len = hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 0, HCBUFSIZ_LARGE - 0, salt_idx, digest_idx);
 
         if (hash2)
         {
-          out_len += hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 16, HCBUFSIZ_LARGE - 16, salt_idx, split_neighbor);
+          out_len += hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 16, HCBUFSIZ_LARGE - 16, salt_idx, split_neighbor);
         }
 
         out_buf[out_len] = 0;
@@ -804,7 +807,7 @@ int potfile_handle_show (hashcat_ctx_t *hashcat_ctx)
 
         u8 *out_buf = potfile_ctx->out_buf;
 
-        const int out_len = hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf, HCBUFSIZ_LARGE, salt_idx, digest_idx);
+        const int out_len = hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf, HCBUFSIZ_LARGE, salt_idx, digest_idx);
 
         out_buf[out_len] = 0;
 
@@ -967,11 +970,11 @@ int potfile_handle_left (hashcat_ctx_t *hashcat_ctx)
 
         u8 *out_buf = potfile_ctx->out_buf;
 
-        int out_len = hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 0, HCBUFSIZ_LARGE - 0, salt_idx, digest_idx);
+        int out_len = hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 0, HCBUFSIZ_LARGE - 0, salt_idx, digest_idx);
 
         if (hash2)
         {
-          out_len += hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 16, HCBUFSIZ_LARGE - 16, salt_idx, split_neighbor);
+          out_len += hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf + 16, HCBUFSIZ_LARGE - 16, salt_idx, split_neighbor);
         }
 
         out_buf[out_len] = 0;
@@ -1067,7 +1070,7 @@ int potfile_handle_left (hashcat_ctx_t *hashcat_ctx)
         }
         else
         {
-          out_len = hash_encode (hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf, HCBUFSIZ_LARGE, salt_idx, digest_idx);
+          out_len = hash_encode (hashcat_ctx->user_options, hashcat_ctx->hashconfig, hashcat_ctx->hashes, hashcat_ctx->module_ctx, (char *) out_buf, HCBUFSIZ_LARGE, salt_idx, digest_idx);
         }
 
         out_buf[out_len] = 0;

@@ -9,6 +9,7 @@
 #include "bitops.h"
 #include "convert.h"
 #include "shared.h"
+#include "memory.h"
 
 static const u32   ATTACK_EXEC    = ATTACK_EXEC_INSIDE_KERNEL;
 static const u32   DGST_POS0      = 0;
@@ -75,33 +76,14 @@ char *module_jit_build_options (MAYBE_UNUSED const hashconfig_t *hashconfig, MAY
 {
   char *jit_build_options = NULL;
 
-  u32 native_threads = 0;
+  // We must override whatever tuningdb entry or -T value was set by the user with this
+  // That's because of RC code in inc_cipher_rc4.cl has this for GPU (different on CPU):
+  // #define KEY32(t,k) (((k) * 32) + ((t) & 31) + (((t) / 32) * 2048))
+  // #define KEY8(t,k) (((k) & 3) + (((k) / 4) * 128) + (((t) & 31) * 4) + (((t) / 32) * 8192))
 
-  if (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU)
-  {
-    native_threads = 1;
-  }
-  else if (device_param->opencl_device_type & CL_DEVICE_TYPE_GPU)
-  {
-    #if defined (__APPLE__)
+  u32 native_threads = (device_param->opencl_device_type & CL_DEVICE_TYPE_CPU) ? 1 : 32;
 
-    native_threads = 32;
-
-    #else
-
-    if (device_param->device_local_mem_size < 49152)
-    {
-      native_threads = MIN (device_param->kernel_preferred_wgs_multiple, 32); // We can't just set 32, because Intel GPU need 8
-    }
-    else
-    {
-      native_threads = device_param->kernel_preferred_wgs_multiple;
-    }
-
-    #endif
-  }
-
-  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u -D _unroll", native_threads);
+  hc_asprintf (&jit_build_options, "-D FIXED_LOCAL_SIZE=%u", native_threads);
 
   return jit_build_options;
 }
@@ -294,7 +276,7 @@ int module_hash_encode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
 {
   const krb5asrep_t *krb5asrep = (const krb5asrep_t *) esalt_buf;
 
-  char data[5120 * 4 * 2] = { 0 };
+  char *data = (char *) hcmalloc (5120 * 4 * 2);
 
   for (u32 i = 0, j = 0; i < krb5asrep->edata2_len; i += 1, j += 2)
   {
@@ -328,6 +310,8 @@ int module_hash_encode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
       data);
   }
 
+  hcfree (data);
+
   return line_len;
 }
 
@@ -342,6 +326,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask           = MODULE_DEFAULT;
   module_ctx->module_benchmark_charset        = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt           = MODULE_DEFAULT;
+  module_ctx->module_bridge_name              = MODULE_DEFAULT;
+  module_ctx->module_bridge_type              = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess  = MODULE_DEFAULT;
   module_ctx->module_deep_comp_kernel         = MODULE_DEFAULT;
   module_ctx->module_deprecated_notice        = MODULE_DEFAULT;
