@@ -31,7 +31,7 @@ void printf_hash (u32 *hash)
   printf ("\n");
 }
 
-KERNEL_FQ void m34200_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
+KERNEL_FQ void m35900_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 {
 
   /**
@@ -75,7 +75,7 @@ KERNEL_FQ void m34200_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
   // printf_hash(tmps[gid].current_hash);
 }
 
-KERNEL_FQ void m34200_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
+KERNEL_FQ void m35900_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 {
   /**
    * base
@@ -170,7 +170,7 @@ KERNEL_FQ void m34200_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 
 }
 
-KERNEL_FQ void m34200_comp (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
+KERNEL_FQ void m35900_comp (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 {
 
   /**
