@@ -20,17 +20,6 @@ typedef struct symfony_sha512_tmp
   u32 current_hash[32];
 } symfony_sha512_tmp_t;
 
-
-void printf_hash (u32 *hash)
-{
-  u8 *to_print = (u8 *) hash;
-
-  for (int i = 0; i < 16; i++)
-    printf ("%1X ", to_print[i]);
-
-  printf ("\n");
-}
-
 KERNEL_FQ void m35900_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 {
 
@@ -49,9 +38,7 @@ KERNEL_FQ void m35900_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
 
   sha512_ctx_t ctx;
 
-  // printf("%s", (u8 *) salt_bufs[SALT_POS_HOST].salt_buf);
   sha512_init (&ctx);
-  // print_hex(pws[gid].i, pws[gid].pw_len);
   sha512_update_global_swap (&ctx, pws[gid].i, pws[gid].pw_len);
   sha512_update_global_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf_pc, salt_bufs[SALT_POS_HOST].salt_len_pc);
   sha512_final (&ctx);
@@ -72,7 +59,6 @@ KERNEL_FQ void m35900_init (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
   tmps[gid].current_hash[13] = l32_from_64_S (ctx.h[6]);
   tmps[gid].current_hash[14] = h32_from_64_S (ctx.h[7]);
   tmps[gid].current_hash[15] = l32_from_64_S (ctx.h[7]);
-  // printf_hash(tmps[gid].current_hash);
 }
 
 KERNEL_FQ void m35900_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
@@ -128,9 +114,9 @@ KERNEL_FQ void m35900_loop (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
   {
     sha512_init (&ctx);
 
-    sha512_update_global (&ctx, w, 64);
-    sha512_update_global_swap (&ctx, pws[gid].i, pws[gid].pw_len);
-    sha512_update_global_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf_pc, salt_bufs[SALT_POS_HOST].salt_len_pc);
+    sha512_update (&ctx, w, 64);
+    sha512_update_swap (&ctx, pws[gid].i, pws[gid].pw_len);
+    sha512_update_swap (&ctx, salt_bufs[SALT_POS_HOST].salt_buf_pc, salt_bufs[SALT_POS_HOST].salt_len_pc);
     sha512_final (&ctx);
 
     w[ 0] = h32_from_64_S (ctx.h[0]);
@@ -189,8 +175,8 @@ KERNEL_FQ void m35900_comp (KERN_ATTR_TMPS (symfony_sha512_tmp_t))
   const u32 r2 = hc_swap32_S (tmps[gid].current_hash[2]);
   const u32 r3 = hc_swap32_S (tmps[gid].current_hash[3]);
 
-#define il_pos 0
-#ifdef KERNEL_STATIC
-#include COMPARE_M
-#endif
+  #define il_pos 0
+  #ifdef KERNEL_STATIC
+  #include COMPARE_M
+  #endif
 }

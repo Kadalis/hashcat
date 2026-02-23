@@ -97,14 +97,12 @@ const char *module_st_pass (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_U
   return ST_PASS;
 }
 
-
 static const char *SIGNATURE_SYMFONY_SHA512 = "$symfony_sha512$";
 
 typedef struct symfony_sha512_tmp
 {
   u32 current_hash[32];         // 128 bytes. hash length 64 bytes
 } symfony_sha512_tmp_t;
-
 
 u64 module_tmp_size (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const user_options_t *user_options, MAYBE_UNUSED const user_options_extra_t *user_options_extra)
 {
@@ -177,16 +175,6 @@ int module_hash_decode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSE
   return PARSER_OK;
 }
 
-void printf_hash (u32 *hash)
-{
-  u8 *to_print = (u8 *) hash;
-
-  for (int i = 0; i < 16; i++)
-    printf ("%1X ", to_print[i]);
-
-  printf ("\n");
-}
-
 int module_hash_encode (MAYBE_UNUSED const hashconfig_t *hashconfig, MAYBE_UNUSED const void *digest_buf, MAYBE_UNUSED const salt_t *salt, MAYBE_UNUSED const void *esalt_buf, MAYBE_UNUSED const void *hook_salt_buf, MAYBE_UNUSED const hashinfo_t *hash_info, char *line_buf, MAYBE_UNUSED const int line_size)
 {
   u64 *digest = (u64 *) digest_buf;
@@ -210,6 +198,8 @@ void module_init (module_ctx_t *module_ctx)
   module_ctx->module_benchmark_mask = MODULE_DEFAULT;
   module_ctx->module_benchmark_charset = MODULE_DEFAULT;
   module_ctx->module_benchmark_salt = MODULE_DEFAULT;
+  module_ctx->module_bridge_name = MODULE_DEFAULT;
+  module_ctx->module_bridge_type = MODULE_DEFAULT;
   module_ctx->module_build_plain_postprocess = MODULE_DEFAULT;
   module_ctx->module_deep_comp_kernel = MODULE_DEFAULT;
   module_ctx->module_deprecated_notice = MODULE_DEFAULT;
